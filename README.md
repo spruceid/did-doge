@@ -1,2 +1,6 @@
 # did-doge
-A meme method
+
+# Introduction
+The Dogecoin DID method (did:doge). 
+
+# Why a Dogecoin DID Method? 
