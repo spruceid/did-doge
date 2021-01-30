@@ -38,43 +38,42 @@
   <h2>Introduction</h2>
   <section>
   <h3>Prior Work and Enhancements</h3>
-    <p> We draw heavily from groundbreaking prior work by Christopher Allen and
-        Kim Hamilton Duffy within the W3C Credentials Community Group on the
-        [BTCR DID Method](https://w3c-ccg.github.io/didm-btcr/) due to strong
-        architectural similarities between the Bitcoin and Dogecoin
-        blockchains.</p>
-    <p> However, there are some key differences that enable new
-        privacy-preserving benefits. Namely, the did:doge method-specific
-        identifier is the Base58Check-encoded Dogecoin address itself, allowing
-        for DID usage even in the absence of any public transaction histories
-        and only relying upon them for rotation events for verification methods
-        and service endpoints. This specification defines the efficient
-        resolution of the did:doge method-specific identifier to an optional
-        "genesis" TxRef for DID document updates, which then follows the linear
-        transaction history "tip" in the same style of did:btcr.
-    <p> In summary, while did:btcr requires a cleared transaction prior to
-        first use, did:doge does not, allowing users use of decentralized
-        identifiers even if they do not own cryptocurrencies.</p>
+  <p> We draw heavily from groundbreaking prior work by Christopher Allen and
+      Kim Hamilton Duffy within the W3C Credentials Community Group on the
+      <a href="https://w3c-ccg.github.io/didm-btcr/">BTCR DID Method]</a> due
+      to strong architectural similarities between the Bitcoin and Dogecoin
+      blockchains.</p>
+  <p> However, there are some key differences that enable new
+      privacy-preserving benefits. Namely, the did:doge method-specific
+      identifier is the Base58Check-encoded Dogecoin address itself, allowing
+      for DID usage even in the absence of any public transaction histories
+      and only relying upon them for rotation events for verification methods
+      and service endpoints. This specification defines the efficient
+      resolution of the did:doge method-specific identifier to an optional
+      "genesis" TxRef for DID document updates, which then follows the linear
+      transaction history "tip" in the same style of did:btcr.
+  <p> In summary, while did:btcr requires a cleared transaction prior to
+      first use, did:doge does not, allowing users use of decentralized
+      identifiers even if they do not own cryptocurrencies.</p>
   </section> <!-- h3 -->
   </section> <!-- h2 -->
   <section>
   <h2>Terminology</h2>
   <ul>
-    <li><b>did:doge genesis TxRef</b>: </li>
+    <li><b>did:doge genesis transaction</b>: </li>
   </ul>
   </section>
   <section>
   <h2>Core Concepts</h2>
   <section>
-  <h2>Doge DID Scheme</h2>
-  <p>The namestring that shall identify this DID method is: <code>doge</code>.
-     A DID that uses this method MUST begin with the prefix
-     <code>did:doge</code>. As per the DID specification, this string MUST be
-     in lowercase.</p>
-    <p>The full Doge DID scheme is defined by the following
-       <a href="https://tools.ietf.org/html/std68">ABNF</a>:
-    </p>
-    <pre><code>
+  <h3>Doge DID Scheme</h3>
+  <p> The namestring that shall identify this DID method is: <code>doge</code>.
+      A DID that uses this method MUST begin with the prefix
+      <code>did:doge</code>. As per the DID specification, this string MUST be
+      in lowercase.</p>
+  <p> The full Doge DID scheme is defined by the following
+      <a href="https://tools.ietf.org/html/std68">ABNF</a>:</p>
+  <pre><code>
 doge-did    = "did:doge:" address
 address     = "D" 33*33base58-char
 base58-char = "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9" /
@@ -84,11 +83,11 @@ base58-char = "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9" /
               "a" / "b" / "c" / "d" / "e" / "f" / "g" / "h" / "i" / "j" /
               "k" / "m" / "n" / "o" / "p" / "q" / "r" / "s" / "t" / "u" /
               "v" / "w" / "x" / "y" / "z"
-    </code></pre>
-    <p> All Doge DID method-specific identifiers are Dogecoin addresses,
-        which are Base58Check encoded P2PKH and P2SH prefixed by a
-        <code>"D"</code>.
-    <p> Example Doge DID: <code>did:doge:DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L</code>.</p>
+  </code></pre>
+  <p> All Doge DID method-specific identifiers are Dogecoin addresses,
+      which are Base58Check encoded P2PKH and P2SH prefixed by a
+      <code>"D"</code>.</p>
+  <p> Example Doge DID: <code>did:doge:DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L</code>.</p>
   </section>
   <section>
   <h3>Implicit Resolution</h3>
@@ -119,167 +118,168 @@ base58-char = "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9" /
     "authentication": ["#wow"],
     "assertionMethod": ["#vckey-0"]
 }
-    </pre>
-    <p> A resolver MUST search the Dogecoin public blockchain exhaustively for
-        did:doge genesis transactions as part of implicit resolution.</p>
-    </section>
-    <section>
-    <h3>did:doge Genesis Transactions</h3>
-    <p> To initiate key and service input rotations, a did:doge DID controller
-        MUST sign and clear a transaction to the public Dogecoin blockchain
-        conforming to the following requirements.</p>
-    <ol>
-      <li>The transaction MUST be signed by the private key corresponding to
-          the did:doge method-specific identifier interpreted as a Dogecoin
-          address (henceforth known as the "corresponding Dogecoin address").
-      <li>The transaction MUST contain in the <code>scriptPubKey</code> within
-          the <code>txout</code> at index 0 the corresponding Dogecoin
-          address's <code>pubKeyHash</code> as the recipient, specifically by
-          substituting the <code>publicKeyHash</code> for the placeholder
-          <code>[DOGECOIN_ADDRESS_PKH]</code> in the Script template:
-          <pre class='example'>
+  </pre>
+  <p> A resolver MUST search the Dogecoin public blockchain exhaustively for
+      did:doge genesis transactions as part of implicit resolution.</p>
+  </section>
+  <section>
+  <h3>did:doge Genesis Transactions</h3>
+  <p> To initiate key and service input rotations, a did:doge DID controller
+      MUST sign and clear a transaction to the public Dogecoin blockchain
+      conforming to the following requirements.</p>
+  <ol>
+    <li>The transaction MUST be signed by the private key corresponding to
+        the did:doge method-specific identifier interpreted as a Dogecoin
+        address (henceforth known as the "corresponding Dogecoin
+        address").</li>
+    <li>The transaction MUST contain in the <code>scriptPubKey</code> within
+        the <code>txout</code> at index 0 a P2PKH Script with the
+        corresponding Dogecoin address's <code>pubKeyHash</code> as the
+        recipient, specifically by substituting the
+        <code>publicKeyHash</code> for the placeholder
+        <code>[DOGECOIN_ADDRESS_PKH]</code> in the Script template:
+        <pre class='example'>
 OP_DUP
   OP_HASH160
     [DOGECOIN_ADDRESS_PKH]
 OP_EQUALVERIFY
 OP_CHECKSIG
-          </pre>
-      </li>
-      <li>The transaction MUST contain in the <code>scriptPubKey</code> within
-          the <code>txout</code> at index 1 the following Script exactly:
-          <pre class='example'>
+        </pre>
+    </li>
+    <li>The transaction MUST contain in the <code>scriptPubKey</code> within
+        the <code>txout</code> at index 1 the following Script exactly:
+        <pre class='example'>
 OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e657927204973206f6e2047616d6553746f70
-          </pre>
-          This unique value is meant to signify an intentful did:doge genesis
-          transaction, and has been selected because it has not been used
-          previously to this specification.
-      </li>
-      <li>The transaction MUST NOT contain any other <code>txout</code> entries.</li>
+        </pre>
+        This unique value is meant to signify an intentful did:doge genesis
+        transaction, and has been selected because it has not been used
+        previously to this specification's existence.
+    </li>
+    <li>The transaction MUST NOT contain any other <code>txout</code> entries.</li>
+  </ol>
+  <p> The did:doge genesis transaction is defined as the transaction matching
+      the criteria above found on the public Dogecoin blockchain with the
+      lowest block height, and in the case of multiple matching transactions
+      in the same block, the most preceding transaction in the transaction
+      list.</p>
+  </section>
+  </section> <!-- h2 -->
+  <section>
+    <h2>Operations</h2>
+    <section>
+    <h3>Create (Register)</h3>
+    <p></p>
+    <ol>
+      <li></li>
+      <li></li>
+      <li></li>
     </ol>
-
-    <p> The did:doge genesis transaction is defined as the transaction matching
-        the criteria above found on the public Dogecoin blockchain with the
-        lowest block height, and in the case of multiple matching transactions
-        in the same block, the most preceding transaction in the transaction
-        list.</p>
-    </section>
-    </section> <!-- h2 -->
-    <section>
-      <h2>Operations</h2>
-      <section>
-      <h3>Create (Register)</h3>
-      <p></p>
-      <ol>
-        <li></li>
-        <li></li>
-        <li></li>
-      </ol>
-      </section>
-
-      <section>
-      <h3>Read (Resolve)</h3>
-      <p></p>
-      <ol>
-        <li></li>
-        <li></li>
-        <li></li>
-      </ol>
-      </section>
-
-      <section>
-      <h3>Update (Replace)</h3>
-      <p></p>
-      <ol>
-        <li></li>
-        <li></li>
-        <li></li>
-      </ol>
-      </section>
-
-      <section>
-      <h3>Delete (Revoke)</h3>
-      <p></p>
-      <ol>
-        <li></li>
-        <li></li>
-        <li></li>
-      </ol>
-      </section>
     </section>
 
     <section>
-      <h2>Security & Privacy</h2>
-      <section>
-      <h3>Security Considerations</h3>
-      <section>
-      <h4>Eavesdropping</h4>
-      </section>
-      <section>
-      <h4>Replay</h4>
-      </section>
-      <section>
-      <h4>Message Insertion</h4>
-      </section>
-      <section>
-      <h4>Deletion</h4>
-      </section>
-      <section>
-      <h4>Modification</h4>
-      </section>
-      <section>
-      <h4>Man-in-the-Middle</h4>
-      </section>
-      <section>
-      <h4>Denial of Service</h4>
-      </section>
-      <section>
-      <h4>Residual Risks</h4>
-      </section>
-      </section>
-      <section>
-      <h3>Privacy Considerations</h3>
-      <p> The DID method specification's Privacy Considerations section MUST
-          discuss any subsection of section 5 of [RFC6973] that could apply in
-          a method-specific manner. The subsections to consider are:
-          surveillance, stored data compromise, unsolicited traffic,
-          misattribution, correlation, identification, secondary use,
-          disclosure, exclusion.
-      </p>
-      <section>
-      <h4>Surveillance</h4>
-      </section>
-      <section>
-      <h4>Stored data compromise</h4>
-      </section>
-      <section>
-      <h4>Unsolicited traffic</h4>
-      </section>
-      <section>
-      <h4>Misattribution</h4>
-      </section>
-      <section>
-      <h4>Correlation</h4>
-      </section>
-      <section>
-      <h4>Identification</h4>
-      </section>
-      <section>
-      <h4>Secondary use</h4>
-      </section>
-      <section>
-      <h4>Disclosure</h4>
-      </section>
-      <section>
-      <h4>Exclusion</h4>
-      </section>
-      </section>
-    </section>
-    <section>
-      <h2>Reference Implementations</h2>
+    <h3>Read (Resolve)</h3>
+    <p></p>
+    <ol>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ol>
     </section>
 
     <section>
-      <h2>Resources</h2>
+    <h3>Update (Replace)</h3>
+    <p></p>
+    <ol>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ol>
     </section>
+
+    <section>
+    <h3>Delete (Revoke)</h3>
+    <p></p>
+    <ol>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ol>
+    </section>
+  </section>
+
+  <section>
+    <h2>Security & Privacy</h2>
+    <section>
+    <h3>Security Considerations</h3>
+    <section>
+    <h4>Eavesdropping</h4>
+    </section>
+    <section>
+    <h4>Replay</h4>
+    </section>
+    <section>
+    <h4>Message Insertion</h4>
+    </section>
+    <section>
+    <h4>Deletion</h4>
+    </section>
+    <section>
+    <h4>Modification</h4>
+    </section>
+    <section>
+    <h4>Man-in-the-Middle</h4>
+    </section>
+    <section>
+    <h4>Denial of Service</h4>
+    </section>
+    <section>
+    <h4>Residual Risks</h4>
+    </section>
+    </section>
+    <section>
+    <h3>Privacy Considerations</h3>
+    <p> The DID method specification's Privacy Considerations section MUST
+        discuss any subsection of section 5 of [RFC6973] that could apply in
+        a method-specific manner. The subsections to consider are:
+        surveillance, stored data compromise, unsolicited traffic,
+        misattribution, correlation, identification, secondary use,
+        disclosure, exclusion.
+    </p>
+    <section>
+    <h4>Surveillance</h4>
+    </section>
+    <section>
+    <h4>Stored data compromise</h4>
+    </section>
+    <section>
+    <h4>Unsolicited traffic</h4>
+    </section>
+    <section>
+    <h4>Misattribution</h4>
+    </section>
+    <section>
+    <h4>Correlation</h4>
+    </section>
+    <section>
+    <h4>Identification</h4>
+    </section>
+    <section>
+    <h4>Secondary use</h4>
+    </section>
+    <section>
+    <h4>Disclosure</h4>
+    </section>
+    <section>
+    <h4>Exclusion</h4>
+    </section>
+    </section>
+  </section>
+  <section>
+    <h2>Reference Implementations</h2>
+  </section>
+
+  <section>
+    <h2>Resources</h2>
+  </section>
   </body>
 </html>
