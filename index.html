@@ -164,33 +164,55 @@ OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e65792720
       transaction as specified in the previous section.</p>
   <ol>
     <li>The transaction MUST be signed by the private key corresponding to
-        the <code>pubKeyHash</code> in the P2PKH Script recipient of the
-        "tip" transaction of the corresponding DID's did:doge update
-        transactions.</li>
+        the did:doge active keypair.</li>
+    <li>The transaction MUST contain a <code>txin</code> at index 0 that
+        corresponds to the <code>txout</code> at index 0 of a valid did:doge
+        genesis transaction or valid did:doge update transaction.</li>
     <li>The transaction MUST contain in the <code>scriptPubKey</code> within
         the <code>txout</code> at index 0 a P2PKH Script with the
-        desired active private key's corresponding <code>pubKeyHash</code> as the
-        recipient, specifically by substituting the <code>publicKeyHash</code>
-        for the placeholder <code>[ACTIVE_KEY_PKH]</code> in the Script
-        template:
+        next did:doge active keypair's corresponding <code>pubKeyHash</code> as
+        the recipient, specifically by substituting the
+        <code>publicKeyHash</code> for the placeholder
+        <code>[NEXT_ACTIVE_KEY_PKH]</code> in the Script template:
         <pre class='example'>
 OP_DUP
   OP_HASH160
-    [ACTIVE_KEY_PKH]
+    [NEXT_ACTIVE_KEY_PKH]
 OP_EQUALVERIFY
 OP_CHECKSIG
         </pre>
+        The next did:doge active keypair MAY be the did:doge active keypair.
     </li>
-    <li>To encode a single optional service endpoint URI, the transaction MAY
-        contain in the <code>scriptPubKey</code> within the <code>txout</code>
-        at index 1 the following Script template, substituing the desired
-        service endpoint URI encoded as hex (no longer than 80 bytes) for
-        <code>[SERVICE_ENDPOINT_URI]</code>:
+    <li>The transaction MUST contain in the <code>scriptPubKey</code> within
+        the <code>txout</code> at index 1 the following Script template,
+        substituing a desired service endpoint URI encoded as hex (no longer
+        than 80 bytes) for <code>[SERVICE_ENDPOINT_URI]</code>:
         <pre class='example'>
 OP_RETURN [SERVICE_ENDPOINT_URI]
         </pre>
+        If no service endpoint is desired, an empty value may be chosen for
+        <code>[SERVICE_ENDPOINT_URI]</code>. Without the <code>OP_RETURN</code>
+        operation, this transaction would be considered a did:doge deactivation
+        transaction instead, irreversibly deactivating the DID.
     </li>
     <li>The transaction MUST NOT contain any other <code>txout</code> entries.</li>
+  </ol>
+  </section>
+  <section>
+  <h3>did:doge Deactivation Transactions</h3>
+  <p> To deactivaate a DID permanently and irreversibly, there must exist a
+      corresponding did:doge genesis transaction as specified in the previous
+      section.</p>
+  <ol>
+    <li>The transaction MUST be signed by the private key corresponding to
+        the did:doge active keypair.</li>
+    <li>The transaction MUST contain a <code>txin</code> at index 0 that
+        corresponds to the <code>txout</code> at index 0 of a valid did:doge
+        genesis transaction or valid did:doge update transaction.</li>
+    <li>The transaction MUST NOT contain the Script operation
+        <code>OP_RETURN</code> within the <code>scriptPubKey</code> of any of
+        its <code>txout</code> entries.
+    </li>
   </ol>
   </section>
   <section>
@@ -200,18 +222,19 @@ OP_RETURN [SERVICE_ENDPOINT_URI]
       the transaction on the public Dogecoin blockchain that uses the current
       transaction's <code>txout</code> at index 0 as its <code>txin</code> at
       index 0.</p>
-  <p> The <dfn>terminal did:doge update transaction</dfn> is the terminal
+  <p> The <dfn>did:doge active update transaction</dfn> is the last
       transaction obtained by starting at a did:doge genesis transaction or
       did:doge update transaction and recursively identifying the following
       did:doge update transaction until none exists.</p>
   <p> The <dfn>did:doge active keypair</dfn> is the corresponding keypair to
-      the signature produced via private key signing of the terminal did:doge
+      the signature produced via private key signing of the did:doge active
       update transaction, or the corresponding keypair to the DID method
       specific identifier if no update transactions exist.</p>
   <p> The <dfn>did:doge active service endpoint</dfn> is the parameter of
       <code>OP_RETURN</code> in the <code>scriptPubKey</code> of the
-      <code>txout</code> at index 1 of the terminal did:doge update
-      transaction, or it is empty if no update transactions exist.</p>
+      <code>txout</code> at index 1 of the did:doge active update
+      transaction, or it is empty if no update transactions exist or the
+      <code>OP_RETURN</code> has no following data.</p>
   </p>
   </section>
   </section> <!-- h2 -->
@@ -256,7 +279,10 @@ OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e65792720
       <li>If the did:doge genesis transaction does not exist, then resolve the
           DID document implicitly as specified in 2.2. At this point,
           resolution is considered to be completed and any additional steps
-          below MUST NOT be followed.</li>
+          MUST NOT be followed.</li>
+      <li>If the did:doge deactivation transaction exists, then the DID is
+          considered deactived, resolution fails, and any additional steps MUST
+          NOT be followed</li>
       <li>Construct a DID document substituting the Dodgecoin address
           corresponding to the did:doge active keypair (as defined in 2.5) for
           the placeholder <code>[DODGECOIN_ADDRESS]</code> in the template
@@ -272,21 +298,26 @@ OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e65792720
 
     <section>
     <h3>Update (Replace)</h3>
-    <p></p>
+    <p> To update a did:doge DID document, the following steps MUST be
+    followed.</p>
     <ol>
-      <li></li>
-      <li></li>
-      <li></li>
+      <li>Ensure that a did:doge genesis transaction exists.</li>
+      <li>Construct a did:doge update transaction as described in 2.4
+          referencing the did:doge active update transaction, or the did:doge
+          genesis transaction if none exists, in its <code>txin</code> at index
+          0.</li>
     </ol>
     </section>
 
     <section>
     <h3>Delete (Revoke)</h3>
-    <p></p>
+    <p> To deactivate a did:doge DID, the following steps MUST be followed.</p>
     <ol>
-      <li></li>
-      <li></li>
-      <li></li>
+      <li>Ensure that a did:doge genesis transaction exists.</li>
+      <li>Construct a did:doge deactivation transaction as described in 2.5
+          referencing the did:doge active update transaction, or the did:doge
+          genesis transaction if none exists, in its <code>txin</code> at index
+          0.</li>
     </ol>
     </section>
   </section>
