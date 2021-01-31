@@ -87,10 +87,10 @@ base58-char = "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9" /
   <h3>Implicit Resolution</h3>
   <p> Every Dogecoin address, whether it has a transaction on the public
       Dogecoin blockchain or not, is a valid did:doge by default. If a
-      Dogecoin address does not any did:doge genesis transactions, then a DID
-      resolver MUST generate a default DID Document using the Dogecoin
-      address as its only input into the following template, substituting the
-      input for the placeholder <code>[DOGECOIN_ADDRESS]</code>:</p>
+      Dogecoin address does not have any did:doge genesis transactions, 
+      then a DID resolver MUST generate a default DID Document using the 
+      Dogecoin address as its only input into the following template, 
+      substituting the input for the placeholder <code>[DOGECOIN_ADDRESS]</code>:</p>
   <pre class='example'>
 {
     "@context": ["https://w3id.org/did", "https://w3id.org/doge/v1"],
