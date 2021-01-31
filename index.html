@@ -58,12 +58,6 @@
   </section> <!-- h3 -->
   </section> <!-- h2 -->
   <section>
-  <h2>Terminology</h2>
-  <ul>
-    <li><b>did:doge genesis transaction</b>: </li>
-  </ul>
-  </section>
-  <section>
   <h2>Core Concepts</h2>
   <section>
   <h3>Doge DID Scheme</h3>
@@ -163,26 +157,116 @@ OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e65792720
       in the same block, the most preceding transaction in the transaction
       list.</p>
   </section>
+  <section>
+  <h3>did:doge Update Transactions</h3>
+  <p> To conduct key and service input rotations using did:doge update
+      transactions for a DID, there must exist a corresponding did:doge genesis
+      transaction as specified in the previous section.</p>
+  <ol>
+    <li>The transaction MUST be signed by the private key corresponding to
+        the <code>pubKeyHash</code> in the P2PKH Script recipient of the
+        "tip" transaction of the corresponding DID's did:doge update
+        transactions.</li>
+    <li>The transaction MUST contain in the <code>scriptPubKey</code> within
+        the <code>txout</code> at index 0 a P2PKH Script with the
+        desired active private key's corresponding <code>pubKeyHash</code> as the
+        recipient, specifically by substituting the <code>publicKeyHash</code>
+        for the placeholder <code>[ACTIVE_KEY_PKH]</code> in the Script
+        template:
+        <pre class='example'>
+OP_DUP
+  OP_HASH160
+    [ACTIVE_KEY_PKH]
+OP_EQUALVERIFY
+OP_CHECKSIG
+        </pre>
+    </li>
+    <li>To encode a single optional service endpoint URI, the transaction MAY
+        contain in the <code>scriptPubKey</code> within the <code>txout</code>
+        at index 1 the following Script template, substituing the desired
+        service endpoint URI encoded as hex (no longer than 80 bytes) for
+        <code>[SERVICE_ENDPOINT_URI]</code>:
+        <pre class='example'>
+OP_RETURN [SERVICE_ENDPOINT_URI]
+        </pre>
+    </li>
+    <li>The transaction MUST NOT contain any other <code>txout</code> entries.</li>
+  </ol>
+  </section>
+  <section>
+  <h3>Additional Terminology</h3>
+  <p> The <dfn>following did:doge update transaction</dfn> with respect to a
+      did:doge genesis transaction or did:doge update transaction is defined as
+      the transaction on the public Dogecoin blockchain that uses the current
+      transaction's <code>txout</code> at index 0 as its <code>txin</code> at
+      index 0.</p>
+  <p> The <dfn>terminal did:doge update transaction</dfn> is the terminal
+      transaction obtained by starting at a did:doge genesis transaction or
+      did:doge update transaction and recursively identifying the following
+      did:doge update transaction until none exists.</p>
+  <p> The <dfn>did:doge active keypair</dfn> is the corresponding keypair to
+      the signature produced via private key signing of the terminal did:doge
+      update transaction, or the corresponding keypair to the DID method
+      specific identifier if no update transactions exist.</p>
+  <p> The <dfn>did:doge active service endpoint</dfn> is the parameter of
+      <code>OP_RETURN</code> in the <code>scriptPubKey</code> of the
+      <code>txout</code> at index 1 of the terminal did:doge update
+      transaction, or it is empty if no update transactions exist.</p>
+  </p>
+  </section>
   </section> <!-- h2 -->
   <section>
     <h2>Operations</h2>
     <section>
     <h3>Create (Register)</h3>
-    <p></p>
+    <p> Doge DIDs exist per each Dogecoin address by default.</p>
+    <p> However, to enable key rotation and specification of a service
+        endpoint, the following steps MUST be followed, using the placeholder
+        <code>[DOGECOIN_ADDRESS]</code> for a Dogecoin address.</p>
     <ol>
-      <li></li>
-      <li></li>
-      <li></li>
+      <li>Ensure no valid did:doge genesis transactions exist.</li>
+      <li>Construct a transaction with the following two <code>txout</code>
+          entries only:
+        <ol>
+        <li>The <code>txout</code> at index 0 MUST contain within its
+            <code>scriptPubKey</code> a P2PKH Script with the corresponding
+            <code>[DOGECOIN_ADDRESS]</code> <code>publicKeyHash</code> as the
+            recipient.</li>
+        <li>The <code>txout</code> at index 1 MUST contain within its
+            <code>scriptPubKey</code> the exact Script:
+            <pre class="example">
+OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e657927204973206f6e2047616d6553746f70
+            </pre></li>
+        </ol>
+      </li>
+      <li>Sign the transaction above with the corresponding private key for
+          <code>[DOGECOIN_ADDRESS]</code> and clear it on the public Dogecoin
+          blockchain.</li>
     </ol>
     </section>
 
     <section>
     <h3>Read (Resolve)</h3>
-    <p></p>
+    <p> To resolve a did:doge DID, the following steps MUST be followed,
+        using the placeholder <code>[DOGECOIN_ADDRESS]</code> for a Dogecoin
+        address.</p>
     <ol>
-      <li></li>
-      <li></li>
-      <li></li>
+      <li>Search the public Dogecoin blockchain exhaustively for a did:doge
+          genesis transaction as defined in Section 2.3.
+      <li>If the did:doge genesis transaction does not exist, then resolve the
+          DID document implicitly as specified in 2.2. At this point,
+          resolution is considered to be completed and any additional steps
+          below MUST NOT be followed.</li>
+      <li>Construct a DID document substituting the Dodgecoin address
+          corresponding to the did:doge active keypair (as defined in 2.5) for
+          the placeholder <code>[DODGECOIN_ADDRESS]</code> in the template
+          specified within 2.2.</li>
+      <li>If the did:doge active service endpoint exists, define a single
+          service endpoint within the DID document, populating the
+          <code>id</code> with <code>did:doge:[DOGECOIN_ADDRESS]#service</code>,
+          <code>type</code> with <code>DidDogeService</code>, and
+          <code>serviceEndpoint</code> of the did:doge active service
+          endpoint.</li>
     </ol>
     </section>
 
@@ -211,67 +295,27 @@ OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e65792720
     <h2>Security & Privacy</h2>
     <section>
     <h3>Security Considerations</h3>
-    <section>
-    <h4>Eavesdropping</h4>
-    </section>
-    <section>
-    <h4>Replay</h4>
-    </section>
-    <section>
-    <h4>Message Insertion</h4>
-    </section>
-    <section>
-    <h4>Deletion</h4>
-    </section>
-    <section>
-    <h4>Modification</h4>
-    </section>
-    <section>
-    <h4>Man-in-the-Middle</h4>
-    </section>
-    <section>
-    <h4>Denial of Service</h4>
-    </section>
-    <section>
-    <h4>Residual Risks</h4>
-    </section>
+    <p> DID method specifications MUST include their own Security
+        Considerations sections. This section MUST consider all the
+        requirements mentioned in section 5 of [RFC3552] (page 27) for the DID
+        operations defined in the specification, including eavesdropping,
+        replay, message insertion, deletion, modification, and
+        man-in-the-middle. Potential denial of service attacks MUST be
+        identified as well.</p>
+    <p> A full list of requirements for this section may be found at
+        <a href="https://www.w3.org/TR/did-core/#security-requirements">
+          W3C Decentralized Identifiers 7.3</a></p>
     </section>
     <section>
     <h3>Privacy Considerations</h3>
-    <p> The DID method specification's Privacy Considerations section MUST
-        discuss any subsection of section 5 of [RFC6973] that could apply in
-        a method-specific manner. The subsections to consider are:
-        surveillance, stored data compromise, unsolicited traffic,
-        misattribution, correlation, identification, secondary use,
-        disclosure, exclusion.
-    </p>
-    <section>
-    <h4>Surveillance</h4>
-    </section>
-    <section>
-    <h4>Stored data compromise</h4>
-    </section>
-    <section>
-    <h4>Unsolicited traffic</h4>
-    </section>
-    <section>
-    <h4>Misattribution</h4>
-    </section>
-    <section>
-    <h4>Correlation</h4>
-    </section>
-    <section>
-    <h4>Identification</h4>
-    </section>
-    <section>
-    <h4>Secondary use</h4>
-    </section>
-    <section>
-    <h4>Disclosure</h4>
-    </section>
-    <section>
-    <h4>Exclusion</h4>
-    </section>
+    <p> DID method specifications MUST include their own Privacy Considerations
+        sections to discuss any subsection of section 5 of [RFC6973] that could
+        apply in a method-specific manner. The subsections to consider are:
+        surveillance, stored data compromise, unsolicited traffic, misattribution,
+        correlation, identification, secondary use, disclosure, exclusion.</p>
+    <p> A full list of requirements for this section may be found at
+        <a href="https://www.w3.org/TR/did-core/#privacy-requirements">
+          W3C Decentralized Identifiers 7.4</a></p>
     </section>
   </section>
   <section>
