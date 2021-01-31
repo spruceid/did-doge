@@ -9,8 +9,8 @@ shibe a decentralized identifier to use.
 The `did:doge` Decentralized Identifier Method Specification can be found 
 [here](https://spruceid.github.io/did-doge/index.html).
 
-The W3C Community Group working on the DID specification can be found 
-[here](https://w3c-ccg.github.io/).
+The W3C Decentralized Identifiers (DIDs) v1.0 specification can be found 
+[here](https://www.w3.org/TR/did-core/).
 
 # Why a Dogecoin DID Method? 
 
