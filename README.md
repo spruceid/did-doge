@@ -7,7 +7,7 @@ The Dogecoin DID Method (did:doge) is a means to give any
 shibe a decentralized identifier to use. 
 
 The `did:doge` Decentralized Identifier Method Specification can be found 
-[here](index.html).
+[here](https://spruceid.github.io/did-doge/index.html).
 
 The W3C Community Group working on the DID specification can be found 
 [here](https://w3c-ccg.github.io/).
