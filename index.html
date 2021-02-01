@@ -122,12 +122,14 @@ base58-char = "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9" /
       MUST sign and clear a transaction to the public Dogecoin blockchain
       conforming to the following requirements.</p>
   <ol>
-    <li>The transaction MUST be signed by the private key corresponding to
-        the did:doge method-specific identifier interpreted as a Dogecoin
-        address (henceforth known as the "corresponding Dogecoin
-        address").</li>
+    <li>The transaction MUST contain in the <code>scriptSig</code> within the
+        <code>txin</code> at index 0 a valid P2PKH unlocking Script with a
+        public key corresponding to the did:doge method-specific identifier
+        when interpreted as a Dogecoin address.</li>
+    <li>The transaction MAY contain other <code>txin</code> entries as
+        necessary for paying transaction fees.</li>
     <li>The transaction MUST contain in the <code>scriptPubKey</code> within
-        the <code>txout</code> at index 0 a P2PKH Script with the
+        the <code>txout</code> at index 0 a valid P2PKH locking Script with the
         corresponding Dogecoin address's <code>pubKeyHash</code> as the
         recipient, specifically by substituting the
         <code>publicKeyHash</code> for the placeholder
@@ -143,7 +145,8 @@ OP_CHECKSIG
     <li>The transaction MUST contain in the <code>scriptPubKey</code> within
         the <code>txout</code> at index 1 the following Script exactly:
         <pre class='example'>
-OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e657927204973206f6e2047616d6553746f70
+OP_RETURN OP_PUSHBYTES_49
+  5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e657927204973206f6e2047616d6553746f70
         </pre>
         This unique value is meant to signify an intentful did:doge genesis
         transaction, and has been selected because it has not been used
@@ -163,11 +166,15 @@ OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e65792720
       transactions for a DID, there must exist a corresponding did:doge genesis
       transaction as specified in the previous section.</p>
   <ol>
-    <li>The transaction MUST be signed by the private key corresponding to
-        the did:doge active keypair.</li>
-    <li>The transaction MUST contain a <code>txin</code> at index 0 that
-        corresponds to the <code>txout</code> at index 0 of a valid did:doge
-        genesis transaction or valid did:doge update transaction.</li>
+    <li>The transaction MUST contain in the <code>scriptSig</code> within the
+        <code>txin</code> at index 0 a valid P2PKH unlocking Script with a
+        public key corresponding to the did:doge method-specific identifier
+        when interpreted as a Dogecoin address. Furthermore, the
+        <code>txin</code> at index 0 MUST refer to the <code>OutPoint</code> of
+        of a valid did:doge genesis transaction or valid did:doge update
+        transaction.</li>
+    <li>The transaction MAY contain other <code>txin</code> entries as
+        necessary for paying transaction fees.</li>
     <li>The transaction MUST contain in the <code>scriptPubKey</code> within
         the <code>txout</code> at index 0 a P2PKH Script with the
         next did:doge active keypair's corresponding <code>pubKeyHash</code> as
@@ -181,21 +188,21 @@ OP_DUP
 OP_EQUALVERIFY
 OP_CHECKSIG
         </pre>
-        The next did:doge active keypair MAY be the did:doge active keypair.
+        The next did:doge active keypair MAY be the current did:doge active keypair.
     </li>
     <li>The transaction MUST contain in the <code>scriptPubKey</code> within
         the <code>txout</code> at index 1 the following Script template,
-        substituing a desired service endpoint URI conforming to [RFC3986],
-        then encoded as hex (no longer than 80 bytes) for
-        <code>[SERVICE_ENDPOINT_URI]</code>:
+        substituing a desired service endpoint URI encoded as hex (no longer
+        than 79 bytes) for <code>[SERVICE_ENDPOINT_URI]</code> and the decimal
+        length of the URI in bytes for <code>[NUM_BYTES]</code>:
         <pre class='example'>
-OP_RETURN [SERVICE_ENDPOINT_URI]
+OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
         </pre>
         If no service endpoint is desired, an empty value MAY be chosen for
-        <code>[SERVICE_ENDPOINT_URI]</code>. Implementations MUST NOT omit the
-        <code>OP_RETURN</code> instruction in the <code>txout</code> at index
-        1 because without it, this transaction would be considered a did:doge
-        deactivation transaction instead, irreversibly deactivating the DID.
+        <code>[SERVICE_ENDPOINT_URI]</code>. The <code>OP_RETURN</code>
+        instruction MUST be included, otherwise this transaction will be
+        considered a did:doge deactivation transaction instead, permanently and
+        irreversibly deactivating the DID.
     </li>
     <li>The transaction MUST NOT contain any other <code>txout</code> entries.</li>
   </ol>
@@ -206,11 +213,15 @@ OP_RETURN [SERVICE_ENDPOINT_URI]
       corresponding did:doge genesis transaction as specified in the previous
       section.</p>
   <ol>
-    <li>The transaction MUST be signed by the private key corresponding to
-        the did:doge active keypair.</li>
-    <li>The transaction MUST contain a <code>txin</code> at index 0 that
-        corresponds to the <code>txout</code> at index 0 of a valid did:doge
-        genesis transaction or valid did:doge update transaction.</li>
+    <li>The transaction MUST contain in the <code>scriptSig</code> within the
+        <code>txin</code> at index 0 a valid P2PKH unlocking Script with a
+        public key corresponding to the did:doge method-specific identifier
+        when interpreted as a Dogecoin address. Furthermore, the
+        <code>txin</code> at index 0 MUST refer to the <code>OutPoint</code> of
+        of a valid did:doge genesis transaction or valid did:doge update
+        transaction.</li>
+    <li>The transaction MAY contain other <code>txin</code> entries as
+        necessary for paying transaction fees.</li>
     <li>The transaction MUST NOT contain the Script operation
         <code>OP_RETURN</code> within the <code>scriptPubKey</code> of any of
         its <code>txout</code> entries.
