@@ -2,12 +2,15 @@
  * Doge DID Method Implementation (did:doge)
  **/
 
+use std::str::FromStr;
 use hex;
-use bitcoin::{PubkeyHash, PublicKey, Txid};
+use bitcoin::{PubkeyHash, PublicKey, SigHashType, Txid};
 use bitcoin::blockdata::script::{Script, Error as ScriptError, Builder, Instruction};
 use bitcoin::blockdata::opcodes;
 use bitcoin::blockdata::transaction::{OutPoint, Transaction, TxIn, TxOut};
-use opcodes::all::OP_DUP;
+use bitcoin::util::key::PrivateKey;
+use bitcoin_hashes::sha256d::Hash;
+use secp256k1::{Message, Secp256k1};
 
 type PrevOutPointToTxResolver = fn (&OutPoint) -> Option<Transaction>;
 type TxResolver = fn (Txid) -> Option<Transaction>;
@@ -16,7 +19,7 @@ fn build_p2pkh_script(recv_pkh: &PubkeyHash) -> Script {
     Builder::new()
         .push_opcode(opcodes::all::OP_DUP)
         .push_opcode(opcodes::all::OP_HASH160)
-        .push_slice(recv_pkh)
+        .push_slice(&recv_pkh[..])
         .push_opcode(opcodes::all::OP_EQUALVERIFY)
         .push_opcode(opcodes::all::OP_CHECKSIG)
         .into_script()
@@ -78,6 +81,25 @@ fn try_extract_pubkey_from_p2pkh_unlocking_script(script: &Script) -> Option<Pub
         _ => return None,
     };
     return Some(pk);
+}
+
+fn sign_tx(tx: &Transaction, resolve_tx: TxResolver, private_key: &PrivateKey) -> Transaction {
+    let po = tx.input[0].previous_output;
+    let prev_tx = resolve_tx(po.txid).unwrap();
+    let prev_script = &prev_tx.output[po.vout as usize].script_pubkey;
+    let sig_hash = tx.signature_hash(0, &prev_script, SigHashType::All as u32);
+    let secp256k1 = Secp256k1::new();
+    let sig = secp256k1.sign(&Message::from_slice(&sig_hash).unwrap(), &private_key.key);
+    let der_sig = sig.serialize_der();
+    let mut der_sig_padded = der_sig.to_vec();
+    der_sig_padded.extend_from_slice(&[0x01]);
+    let script_sig = Builder::new()
+        .push_slice(&der_sig_padded)
+        .push_slice(&private_key.public_key(&secp256k1).key.serialize())
+        .into_script();
+    let mut signed_tx = tx.clone();
+    signed_tx.input[0].script_sig = script_sig;
+    return signed_tx;
 }
 
 // Genesis Transaction (GTX)
@@ -286,20 +308,24 @@ impl Dtx {
 
 #[cfg(test)]
 mod tests {
-    use bitcoin::blockdata::script::{Script, Builder, Instruction};
+    use bitcoin::{blockdata::script::{Script, Builder, Instruction}, consensus::Encodable};
     use bitcoin::blockdata::opcodes;
     use bitcoin::util::key;
     use super::*;
 
+    static TEST_PRIVKEY: &str =
+        "16639f75cd0fedb471ae4b130ddfd25325376b03415060105c6e62bb7f19227a";
+    static TEST_PRIVKEY_WIF: &str =
+        "5Hz9Uvs52LD2JtWwmdbAv8dfcoqppCKpwqENBgTXp8LzPn7ApyU";
     static TEST_PUBKEY: &str =
-        "04dc74c16f88c2724f3bda71c8ccc976436e24770d985a467bed6b5ed030a58c9881890c14923bc9fd053f13cf2f852cae532740498f091e2255f32eb969789dde";
+        "0403bd27e65ea627147ac58c96254dcae8e2606c1c98255dcde887ea0471f604002aa236d3fb776b96c57ca0a59a2883f0f35afeb51b17d7bd557cdade81ea5618";
     static TEST_SERVICE_URI: &str =
         "https://my-service-endpoint.com:1337";
 
     #[test]
     fn test_build_p2pkh() {
         let expected_asm = 
-            "OP_DUP OP_HASH160 OP_PUSHBYTES_20 70949e085085cd18709ef63d5eac7e13c9343540 OP_EQUALVERIFY OP_CHECKSIG";
+            "OP_DUP OP_HASH160 OP_PUSHBYTES_20 52162d2b55310382b7e55c169cdb5f71fb6ad713 OP_EQUALVERIFY OP_CHECKSIG";
         let pk = key::PublicKey::from_slice(&hex::decode(TEST_PUBKEY).unwrap()).unwrap();
         let pkh = pk.pubkey_hash();
         let script = build_p2pkh_script(&pkh);
@@ -325,5 +351,46 @@ mod tests {
         assert_eq!(expected_asm, utx_txout1_script.asm());
         assert!(utx_txout1_script.is_provably_unspendable());
         assert_eq!(TEST_SERVICE_URI.as_bytes(), &utx_txout1_script.as_bytes()[2..(2 + 36)]);
+    }
+
+    #[test]
+    fn test_gtx_sign() {
+        let prev_txhash = 
+            Hash::from_str("b3e4573c18f2b8e56943f6c09904dfb4aef7391a2a1f3ddbcc569b515eee16e1")
+                .unwrap();
+        let txin = TxIn {
+            previous_output: OutPoint {
+                txid: Txid::from_hash(prev_txhash),
+                vout: 0,
+            },
+            script_sig: Script::default(),
+            sequence: 0xFFFFFFFF,
+            witness: Vec::new(),
+        };
+        let pk = key::PublicKey::from_slice(&hex::decode(TEST_PUBKEY).unwrap()).unwrap();
+        let pkh = pk.pubkey_hash();
+        let private_key = key::PrivateKey::from_str(TEST_PRIVKEY_WIF).unwrap();
+        let unsigned_tx = Gtx::build_tx(&vec![txin], 31337, &pkh);
+        fn resolve_tx(txid: Txid) -> Option<Transaction> {
+            let pk = key::PublicKey::from_slice(&hex::decode(TEST_PUBKEY).unwrap()).unwrap();
+            let pkh = pk.pubkey_hash();
+            return Some(Transaction {
+                input: vec![],
+                output: vec![TxOut {
+                    script_pubkey: build_p2pkh_script(&pkh),
+                    value: 31338,
+                }],
+                version: 0,
+                lock_time: 0,
+            });
+        }
+        let signed_tx = sign_tx(&unsigned_tx, resolve_tx, &private_key);
+        let mut buf = Vec::new();
+        let _ = signed_tx.consensus_encode(&mut buf).unwrap();
+        let expected_buf = "0100000001E116EE5E519B56CCDB3D1F2A1A39F7AEB4DF0499C0F64369E5B8F2183C57E4B3000000006B483045022100E13508EA3CC20EE24B3EC4375B0A6734D4DC1FCCF4F5E5F4E37350DFFDCCF5B3022006FF3EE6750C4971D6C94C431CB11EF91CA3B6461CAE5ED83B8E25CDB658FF9201210203BD27E65EA627147AC58C96254DCAE8E2606C1C98255DCDE887EA0471F60400FFFFFFFF02697A0000000000001976A91452162D2B55310382B7E55C169CDB5F71FB6AD71388AC0000000000000000336A315468652054696D65732032372F4A616E2F32303231202744756D62204D6F6E657927204973206F6E2047616D6553746F7000000000";
+        let string_list = buf.iter()
+            .map(|v| format!("{:02X}", v))
+            .collect::<Vec<String>>();
+        assert_eq!(expected_buf, &string_list.join(""));
     }
 }

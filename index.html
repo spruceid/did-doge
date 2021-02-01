@@ -152,7 +152,7 @@ OP_RETURN OP_PUSHBYTES_49
         transaction, and has been selected because it has not been used
         previously to this specification's existence.
     </li>
-    <li>The transaction MUST NOT contain any other <code>txout</code> entries.</li>
+    <li>The transaction MAY contain other <code>txout</code> entries.</li>
   </ol>
   <p> The did:doge genesis transaction is defined as the transaction matching
       the criteria above found on the public Dogecoin blockchain with the
@@ -204,7 +204,7 @@ OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
         considered a did:doge deactivation transaction instead, permanently and
         irreversibly deactivating the DID.
     </li>
-    <li>The transaction MUST NOT contain any other <code>txout</code> entries.</li>
+    <li>The transaction MAY contain other <code>txout</code> entries.</li>
   </ol>
   </section>
   <section>
@@ -222,7 +222,8 @@ OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
         transaction.</li>
     <li>The transaction MAY contain other <code>txin</code> entries as
         necessary for paying transaction fees.</li>
-    <li>The transaction MUST NOT contain the Script operation
+    <li>The transaction MAY contain other <code>txout</code> entries. However,
+	the transaction MUST NOT contain the Script instruction
         <code>OP_RETURN</code> within the <code>scriptPubKey</code> of any of
         its <code>txout</code> entries.
     </li>
