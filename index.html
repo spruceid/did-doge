@@ -176,7 +176,7 @@ OP_RETURN OP_PUSHBYTES_49
     <li>The transaction MAY contain other <code>txin</code> entries as
         necessary for paying transaction fees.</li>
     <li>The transaction MUST contain in the <code>scriptPubKey</code> within
-        the <code>txout</code> at index 0 a P2PKH Script with the
+        the <code>txout</code> at index 0 a P2PKH locking Script with the
         next did:doge active keypair's corresponding <code>pubKeyHash</code> as
         the recipient, specifically by substituting the
         <code>publicKeyHash</code> for the placeholder
@@ -209,9 +209,11 @@ OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
   </section>
   <section>
   <h3>did:doge Deactivation Transactions</h3>
-  <p> To deactivate a DID permanently and irreversibly, there must exist a
-      corresponding did:doge genesis transaction as specified in the previous
-      section.</p>
+  <p> To deactivate a DID permanently and irreversibly, there must first exist
+      a corresponding did:doge genesis transaction as specified in the previous
+      section. There MAY also exist did:doge update transactions. To deactivate
+      the DID, a deactivation transaction MUST be produced in the manner
+      described below and cleared on the public Dogecoin blockchain.</p>
   <ol>
     <li>The transaction MUST contain in the <code>scriptSig</code> within the
         <code>txin</code> at index 0 a valid P2PKH unlocking Script with a
@@ -233,9 +235,9 @@ OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
   <h3>Additional Terminology</h3>
   <p> The <dfn>following did:doge update transaction</dfn> with respect to a
       did:doge genesis transaction or did:doge update transaction is defined as
-      the transaction on the public Dogecoin blockchain that uses the current
-      transaction's <code>txout</code> at index 0 as its <code>txin</code> at
-      index 0.</p>
+      the conforming did:doge update transaction on the public Dogecoin
+      blockchain that uses the current transaction's <code>txout</code> at
+      index 0 as its <code>txin</code> at index 0.</p>
   <p> The <dfn>did:doge active update transaction</dfn> is the last
       transaction obtained by starting at a did:doge genesis transaction or
       did:doge update transaction and recursively identifying the following
