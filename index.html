@@ -38,20 +38,20 @@
   <h2>Introduction</h2>
   <section>
   <h3>Prior Work and Enhancements</h3>
-  <p> We draw heavily from groundbreaking prior work by Christopher Allen and
-      Kim Hamilton Duffy within the W3C Credentials Community Group on the
-      <a href="https://w3c-ccg.github.io/didm-btcr/">BTCR DID Method]</a> due
-      to strong architectural similarities between the Bitcoin and Dogecoin
+  <p> We draw heavily from prior work by Christopher Allen and Kim Hamilton
+      Duffy within the W3C Credentials Community Group on the <a
+      href="https://w3c-ccg.github.io/didm-btcr/">BTCR DID Method</a> due to
+      strong architectural similarities between the Bitcoin and Dogecoin
       blockchains.</p>
   <p> However, there are some key differences that enable new
       privacy-preserving benefits. Namely, the did:doge method-specific
       identifier is the Base58Check-encoded Dogecoin address itself, allowing
       for DID usage even in the absence of any public transaction histories
       and only relying upon them for rotation events for verification methods
-      and service endpoints. This specification defines the efficient
-      resolution of the did:doge method-specific identifier to an optional
-      "genesis" TxRef for DID document updates, which then follows the linear
-      transaction history "tip" in the same style of did:btcr.
+      and service endpoints. This specification defines the resolution of the
+      did:doge method-specific identifier to an optional "genesis" transaction
+      for DID document updates, which then follows the linear transaction
+      history "tip" in the same style of did:btcr using "update" transactions.
   <p> In summary, while did:btcr requires a cleared transaction prior to
       first use, did:doge does not, allowing users use of decentralized
       identifiers even if they do not own cryptocurrencies.</p>
@@ -193,8 +193,8 @@ OP_CHECKSIG
     <li>The transaction MUST contain in the <code>scriptPubKey</code> within
         the <code>txout</code> at index 1 the following Script template,
         substituing a desired service endpoint URI encoded as hex (no longer
-	than 79 bytes) for <code>[SERVICE_ENDPOINT_URI]</code> and the decimal
-	length of the URI in bytes for <code>[NUM_BYTES]</code>:
+        than 79 bytes) for <code>[SERVICE_ENDPOINT_URI]</code> and the decimal
+        length of the URI in bytes for <code>[NUM_BYTES]</code>:
         <pre class='example'>
 OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
         </pre>
@@ -209,7 +209,7 @@ OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
   </section>
   <section>
   <h3>did:doge Deactivation Transactions</h3>
-  <p> To deactivaate a DID permanently and irreversibly, there must exist a
+  <p> To deactivate a DID permanently and irreversibly, there must exist a
       corresponding did:doge genesis transaction as specified in the previous
       section.</p>
   <ol>
@@ -241,8 +241,8 @@ OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
       did:doge update transaction until none exists.</p>
   <p> The <dfn>did:doge active keypair</dfn> is the corresponding keypair to
       the signature produced via private key signing of the did:doge active
-      update transaction, or the corresponding keypair to the DID method
-      specific identifier if no update transactions exist.</p>
+      update transaction, or the corresponding keypair to the DID
+      method-specific identifier if no update transactions exist.</p>
   <p> The <dfn>did:doge active service endpoint</dfn> is the parameter of
       <code>OP_RETURN</code> in the <code>scriptPubKey</code> of the
       <code>txout</code> at index 1 of the did:doge active update
@@ -257,55 +257,37 @@ OP_RETURN OP_PUSHBYTES_[NUM_BYTES] [SERVICE_ENDPOINT_URI]
     <h3>Create (Register)</h3>
     <p> Doge DIDs exist per each Dogecoin address by default.</p>
     <p> However, to enable key rotation and specification of a service
-        endpoint, the following steps MUST be followed, using the placeholder
-        <code>[DOGECOIN_ADDRESS]</code> for a Dogecoin address.</p>
+        endpoint, the following steps MUST be followed:</p>
     <ol>
       <li>Ensure no valid did:doge genesis transactions exist.</li>
-      <li>Construct a transaction with the following two <code>txout</code>
-          entries only:
-        <ol>
-        <li>The <code>txout</code> at index 0 MUST contain within its
-            <code>scriptPubKey</code> a P2PKH Script with the corresponding
-            <code>[DOGECOIN_ADDRESS]</code> <code>publicKeyHash</code> as the
-            recipient.</li>
-        <li>The <code>txout</code> at index 1 MUST contain within its
-            <code>scriptPubKey</code> the exact Script:
-            <pre class="example">
-OP_RETURN 5468652054696d65732032372f4a616e2f32303231202744756d62204d6f6e657927204973206f6e2047616d6553746f70
-            </pre></li>
-        </ol>
-      </li>
-      <li>Sign the transaction above with the corresponding private key for
-          <code>[DOGECOIN_ADDRESS]</code> and clear it on the public Dogecoin
-          blockchain.</li>
+      <li>Construct a did:doge genesis transaction for desired DID as described
+          in Section 2.3.</li>
     </ol>
     </section>
 
     <section>
     <h3>Read (Resolve)</h3>
-    <p> To resolve a did:doge DID, the following steps MUST be followed,
-        using the placeholder <code>[DOGECOIN_ADDRESS]</code> for a Dogecoin
-        address.</p>
+    <p> To resolve a did:doge DID, the following steps MUST be followed:</p>
     <ol>
       <li>Search the public Dogecoin blockchain exhaustively for a did:doge
           genesis transaction as defined in Section 2.3.
       <li>If the did:doge genesis transaction does not exist, then resolve the
           DID document implicitly as specified in 2.2. At this point,
-          resolution is considered to be completed and any additional steps
-          MUST NOT be followed.</li>
+          resolution is considered to be completed successfully and any
+          additional steps MUST NOT be followed.</li>
       <li>If the did:doge deactivation transaction exists, then the DID is
-          considered deactived, resolution fails, and any additional steps MUST
-          NOT be followed</li>
-      <li>Construct a DID document substituting the Dodgecoin address
-          corresponding to the did:doge active keypair (as defined in 2.5) for
-          the placeholder <code>[DODGECOIN_ADDRESS]</code> in the template
-          specified within 2.2.</li>
+          considered deactivated, resolution is considered to be a failure, and
+          any additional steps MUST NOT be followed.</li>
+      <li>Construct a DID document substituting the Dogecoin address
+          corresponding to the did:doge active keypair (as defined in 2.5) in
+          the template specified within 2.2.</li>
       <li>If the did:doge active service endpoint exists, define a single
           service endpoint within the DID document, populating the
-          <code>id</code> with <code>did:doge:[DOGECOIN_ADDRESS]#service</code>,
-          <code>type</code> with <code>DidDogeService</code>, and
-          <code>serviceEndpoint</code> of the did:doge active service
-          endpoint.</li>
+          <code>id</code> with <code>did:doge:[DOGECOIN_ADDRESS]#service</code>
+          (where <code>[DOGECOIN_ADDRESS]</code> is the Dogecoin address
+          corresponding to the method-specific identifier), <code>type</code>
+          with <code>DidDogeService</code>, and <code>serviceEndpoint</code> of
+          the did:doge active service endpoint.</li>
     </ol>
     </section>
 
