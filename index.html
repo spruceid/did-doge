@@ -164,7 +164,9 @@ OP_RETURN OP_PUSHBYTES_49
   <h3>did:doge Update Transactions</h3>
   <p> To conduct key and service input rotations using did:doge update
       transactions for a DID, there must exist a corresponding did:doge genesis
-      transaction as specified in the previous section.</p>
+      transaction as specified in the previous section. A did:doge update
+      transaction MUST be produced in the manner described below and cleared on
+      the public Dogecoin blockchain.</p>
   <ol>
     <li>The transaction MUST contain in the <code>scriptSig</code> within the
         <code>txin</code> at index 0 a valid P2PKH unlocking Script with a
